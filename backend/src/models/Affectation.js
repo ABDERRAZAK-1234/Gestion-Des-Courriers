@@ -24,7 +24,7 @@ const affectationSchema = new mongoose.Schema(
         commentaire: String,
         dateAffectation: {
             type: Date,
-            default: Date.now()
+            default: Date.now
         },
         dateReception: Date,
 
