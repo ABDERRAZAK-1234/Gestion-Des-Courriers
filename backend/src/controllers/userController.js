@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-require('../models/Role');
-require('../models/Service');
+const Role = require('../models/Role');
+const Service = require('../models/Service');
 
 const createUser = async (req, res) => {
     try {
@@ -21,6 +21,32 @@ const createUser = async (req, res) => {
             });
         }
 
+        const role = await Role.findById(roleId);
+
+        if (!role) {
+            return res.status(404).json({
+                message: 'Role not found'
+            });
+        }
+
+        let service = null;
+
+        if (serviceId) {
+            service = await Service.findById(serviceId);
+
+            if (!service) {
+                return res.status(404).json({
+                    message: 'Service not found'
+                });
+            }
+        }
+
+        if (role.nom === 'RESPONSABLE' && !service) {
+            return res.status(400).json({
+                message: 'ServiceId is required for a responsable user'
+            });
+        }
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
@@ -32,6 +58,11 @@ const createUser = async (req, res) => {
             roleId,
             serviceId: serviceId || null
         });
+
+        if (role.nom === 'RESPONSABLE') {
+            service.responsableId = user._id;
+            await service.save();
+        }
 
         const createdUser = await User.findById(user._id)
             .select('-password').populate('roleId')
@@ -75,7 +106,13 @@ const getUserById = async (req, res) => {
         const user = await User.findById(req.params.id)
             .select('-password')
             .populate('roleId')
-            .populate('serviceId');
+            .populate({
+                path: 'serviceId',
+                populate: {
+                    path: 'responsableId',
+                    select: '-password'
+                }
+            });
 
         if (!user) {
             return res.status(404).json({
