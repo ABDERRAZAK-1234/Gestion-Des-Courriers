@@ -1,7 +1,9 @@
 const Affectation = require('../models/Affectation');
 const Courrier = require('../models/Courrier');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
 require('../models/Service');
-require('../models/User');
+require('../models/Role');
 
 const getMyAffectations = async (req, res) => {
     try {
@@ -78,15 +80,121 @@ const acceptAffectation = async (req, res) => {
             affectation: acceptedAffectation,
             courrier
         });
-    }catch(error){
+    } catch (error) {
         return res.status(500).json({
-            message:'Failed to accept affectation',
-            error:error.message
+            message: 'Failed to accept affectation',
+            error: error.message
+        });
+    }
+};
+
+const assignAffectationToEmployee = async (req, res) => {
+    try {
+        const { affectationId } = req.params;
+        const { employeeId, commentaire } = req.body;
+
+        if (!req.user.serviceId) {
+            return res.status(400).json({
+                message: 'Responsable user is not assigned to a service'
+            });
+        }
+
+        if (!employeeId) {
+            return res.status(400).json({
+                message: 'EmployeeId is required'
+            });
+        }
+
+        const affectation = await Affectation.findById(affectationId)
+            .populate('courrierId');
+
+        if (!affectation) {
+            return res.status(404).json({
+                message: 'Affectation not found'
+            });
+        }
+
+        if (affectation.serviceId.toString() !== req.user.serviceId._id.toString()) {
+            return res.status(403).json({
+                message: 'You are not allowed to assign this affectation'
+            });
+        }
+
+        if (affectation.statutReception !== 'ACCEPTE') {
+            return res.status(400).json({
+                message: 'Affectation must be accepted before assigning it to an employee'
+            });
+        }
+
+        const employee = await User.findById(employeeId).populate('roleId');
+
+        if (!employee) {
+            return res.status(404).json({
+                message: 'Employee not found'
+            });
+        }
+
+        if (employee.status !== 'ACTIVE') {
+            return res.status(400).json({
+                message: 'Employee account is inactive'
+            });
+        }
+
+        if (!employee.roleId || employee.roleId.nom !== 'EMPLOYE') {
+            return res.status(400).json({
+                message: 'Selected user must have EMPLOYE role'
+            });
+        }
+
+        if (!employee.serviceId || employee.serviceId.toString() !== req.user.serviceId._id.toString()) {
+            return res.status(400).json({
+                message: 'Employee must belong to the same service'
+            });
+        }
+
+        const employeeAffectation = await Affectation.create({
+            courrierId: affectation.courrierId._id,
+            fromUserId: req.user._id,
+            toUserId: employee._id,
+            serviceId: req.user.serviceId._id,
+            commentaire
+        });
+
+        const courrier = await Courrier.findByIdAndUpdate(
+            affectation.courrierId._id,
+            { statut: 'EN_COURS' },
+            { new: true, runValidators: true }
+        );
+
+        const notification = await Notification.create({
+            userId: employee._id,
+            courrierId: affectation.courrierId._id,
+            type: 'AFFECTATION',
+            message: `Courrier ${affectation.courrierId.reference} has been assigned to you`
+        });
+
+        const populatedAffectation = await Affectation.findById(employeeAffectation._id)
+            .populate('courrierId')
+            .populate('fromUserId', 'nom prenom email')
+            .populate('toUserId', 'nom prenom email')
+            .populate('serviceId');
+
+        return res.status(201).json({
+            message: 'Courrier assigned to employee successfully',
+            affectation: populatedAffectation,
+            courrier,
+            notification
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Failed to assign courrier to employee',
+            error: error.message
         });
     }
 };
 
 module.exports = {
     getMyAffectations,
-    acceptAffectation
+    acceptAffectation,
+    assignAffectationToEmployee
 };
