@@ -3,6 +3,7 @@ const app = express();
 const authRoutes = require('./routes/authRoutes');
 const { notFound, errorHandler } = require('./middlewares/errorMiddleware');
 const adminUserRoutes = require('./routes/adminUserRoutes');
+const responsableRoutes = require('./routes/responsableRoutes');
 
 const adminCourrierRoutes = require('./routes/adminCourrierRoutes');
 
@@ -23,7 +24,8 @@ app.use('/api/admin/users', adminUserRoutes);
 // admin courrier
 app.use('/api/admin/courriers', adminCourrierRoutes);
 
-
+// responsable
+app.use('/api/responsable', responsableRoutes);
 
 // error handling
 app.use(notFound);
