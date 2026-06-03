@@ -26,6 +26,11 @@ const affectationSchema = new mongoose.Schema(
             type: Date,
             default: Date.now
         },
+        toUserId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            default: null
+        },
         dateReception: Date,
 
 
