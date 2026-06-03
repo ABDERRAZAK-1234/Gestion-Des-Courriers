@@ -50,6 +50,7 @@ const affectCourrierToService = async (req, res) => {
         const affectation = await Affectation.create({
             courrierId: courrier._id,
             fromUserId: req.user._id,
+            toUserId: service.responsableId._id,
             serviceId: service._id,
             commentaire
         });
