@@ -1,5 +1,5 @@
 const Affectation = require('../models/Affectation');
-require('../models/Courrier');
+const Courrier = require('../models/Courrier');
 require('../models/Service');
 require('../models/User');
 
@@ -70,7 +70,67 @@ const acceptAffectation = async (req, res) => {
     }
 };
 
+const traiterAffectation = async (req, res) => {
+    try {
+        const { commentaireTraitement } = req.body;
+
+        const affectation = await Affectation.findById(req.params.affectationId);
+
+        if (!affectation) {
+            return res.status(404).json({
+                message: 'Affectation not found'
+            });
+        }
+
+        if (!affectation.toUserId || affectation.toUserId.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                message: 'You are not allowed to treat this affectation'
+            });
+        }
+
+        if (affectation.statutReception !== 'ACCEPTE') {
+            return res.status(400).json({
+                message: 'Affectation must be accepted before treatment'
+            });
+        }
+
+        if (affectation.dateTraitement) {
+            return res.status(400).json({
+                message: 'Affectation already treated'
+            });
+        }
+
+        affectation.commentaireTraitement = commentaireTraitement;
+        affectation.dateTraitement = new Date();
+        await affectation.save();
+
+        const courrier = await Courrier.findByIdAndUpdate(
+            affectation.courrierId,
+            { statut: 'TRAITE' },
+            { new: true, runValidators: true }
+        );
+
+        const treatedAffectation = await Affectation.findById(affectation._id)
+            .populate('courrierId')
+            .populate('fromUserId', 'nom prenom email')
+            .populate('toUserId', 'nom prenom email')
+            .populate('serviceId');
+
+        return res.status(200).json({
+            message: 'Affectation treated successfully',
+            affectation: treatedAffectation,
+            courrier
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Failed to treat affectation',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     getMyAffectations,
-    acceptAffectation
+    acceptAffectation,
+    traiterAffectation
 };
