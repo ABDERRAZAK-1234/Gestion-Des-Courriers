@@ -32,6 +32,8 @@ const affectationSchema = new mongoose.Schema(
             default: null
         },
         dateReception: Date,
+        commentaireTraitement: String,
+        dateTraitement: Date,
 
 
     },
