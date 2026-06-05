@@ -1,4 +1,7 @@
 const Service = require('../models/Service');
+const User = require('../models/User');
+const Courrier = require('../models/Courrier');
+const Affectation = require('../models/Affectation');
 
 const createService = async (req, res) => {
     try {
@@ -95,7 +98,46 @@ const updateService = async (req, res) => {
     }
 };
 
+const deleteService = async (req, res) => {
+    try {
+        const service = await Service.findById(req.params.id);
+
+        if (!service) {
+            return res.status(404).json({
+                message: 'Service not found'
+            });
+        }
+
+        const usersCount = await User.countDocuments({ serviceId: service._id });
+        const courriersCount = await Courrier.countDocuments({ serviceId: service._id });
+        const affectationsCount = await Affectation.countDocuments({ serviceId: service._id });
+
+        if (usersCount > 0 || courriersCount > 0 || affectationsCount > 0) {
+            return res.status(400).json({
+                message: 'Cannot delete service because it is already used',
+                usage: {
+                    users: usersCount,
+                    courriers: courriersCount,
+                    affectations: affectationsCount
+                }
+            });
+        }
+
+        await Service.findByIdAndDelete(service._id);
+
+        return res.status(200).json({
+            message: 'Service deleted successfully'
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Failed to delete service',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createService,
-    updateService
+    updateService,
+    deleteService
 };
