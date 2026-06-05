@@ -7,6 +7,7 @@ const responsableRoutes = require('./routes/responsableRoutes');
 
 const adminCourrierRoutes = require('./routes/adminCourrierRoutes');
 const employeRoutes = require('./routes/employeRoutes');
+const adminServiceRoutes = require('./routes/adminServiceRoutes');
 
 app.use(express.json());
 // routes
@@ -30,6 +31,9 @@ app.use('/api/responsable', responsableRoutes);
 
 // employe
 app.use('/api/employe', employeRoutes);
+
+// gestion des services
+app.use('/api/admin/services', adminServiceRoutes);
 
 // error handling
 app.use(notFound);
