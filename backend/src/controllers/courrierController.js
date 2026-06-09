@@ -94,8 +94,64 @@ const getAllCourriers = async (req, res) => {
     }
 };
 
+const updateCourrier = async (req, res) => {
+    try {
+        const allowedFields = [
+            'objet',
+            'description',
+            'nameFile',
+            'filePath'
+        ];
+
+        const updates = {};
+
+        allowedFields.forEach((field) => {
+            if (req.body[field] !== undefined) {
+                updates[field] = req.body[field];
+            }
+        });
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({
+                message: 'No fields provided for update'
+            });
+        }
+
+        const courrier = await Courrier.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                isDeleted: false
+            },
+            updates,
+            {
+                new: true,
+                runValidators: true
+            }
+        )
+            .populate('createdBy', 'nom prenom email')
+            .populate('serviceId');
+
+        if (!courrier) {
+            return res.status(404).json({
+                message: 'Courrier not found'
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Courrier updated successfully',
+            courrier
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Failed to update courrier',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createIncomingCourrier,
     createOutgoingCourrier,
-    getAllCourriers
+    getAllCourriers,
+    updateCourrier
 };
