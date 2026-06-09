@@ -1,30 +1,24 @@
 const Courrier = require('../models/Courrier');
 require('../models/User');
+const { generateCourrierReference } = require('../utils/reference');
 
 const createCourrierByType = async (req, res, type) => {
     try {
         const {
-            reference,
             objet,
             description,
             nameFile,
             filePath
         } = req.body;
 
-        if (!reference || !objet || !nameFile) {
+        if (!objet || !nameFile) {
             return res.status(400).json({
                 message: 'Reference, objet and nameFile are required'
             });
         }
 
-        const existingCourrier = await Courrier.findOne({ reference });
-
-        if (existingCourrier) {
-            return res.status(409).json({
-                message: 'Courrier reference already exists'
-            });
-        }
-
+        const reference = await generateCourrierReference(type);
+        
         const courrier = await Courrier.create({
             reference,
             type,
