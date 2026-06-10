@@ -2,6 +2,7 @@ const Affectation = require('../models/Affectation');
 const Courrier = require('../models/Courrier');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const { createLog } = require('../services/logService');
 require('../models/Service');
 require('../models/Role');
 
@@ -75,11 +76,26 @@ const acceptAffectation = async (req, res) => {
             .populate('fromUserId', 'nom prenom email')
             .populate('serviceId');
 
+        await createLog({
+            userId: req.user._id,
+            courrierId: affectation.courrierId,
+            action: 'ACCEPTATION_RESPONSABLE',
+            description: 'Affectation acceptée par le responsable'
+        });
+
         return res.status(200).json({
             message: 'Affectation accepted successfully',
             affectation: acceptedAffectation,
             courrier
         });
+
+        await createLog({
+            userId: req.user._id,
+            courrierId: affectation.courrierId,
+            action: 'ACCEPTATION_RESPONSABLE',
+            description: 'Affectation acceptée par le responsable'
+        });
+
     } catch (error) {
         return res.status(500).json({
             message: 'Failed to accept affectation',
@@ -179,12 +195,21 @@ const assignAffectationToEmployee = async (req, res) => {
             .populate('toUserId', 'nom prenom email')
             .populate('serviceId');
 
+        await createLog({
+            userId: req.user._id,
+            courrierId: affectation.courrierId._id,
+            action: 'TRANSFERT_EMPLOYE',
+            description: `Courrier transféré à ${employee.nom} ${employee.prenom}`
+        });
+        
         return res.status(201).json({
             message: 'Courrier assigned to employee successfully',
             affectation: populatedAffectation,
             courrier,
             notification
         });
+
+
     } catch (error) {
         return res.status(500).json({
             message: 'Failed to assign courrier to employee',
