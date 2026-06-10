@@ -6,7 +6,8 @@ const {
     createOutgoingCourrier,
     getAllCourriers,
     updateCourrier,
-    softDeleteCourrier
+    softDeleteCourrier,
+    getCourrierHistory
 } = require('../controllers/courrierController');
 
 const router = express.Router();
@@ -14,6 +15,7 @@ const router = express.Router();
 router.post('/entrant', protect, authorizeRoles('SECRETAIRE'), createIncomingCourrier);
 router.post('/sortant', protect, authorizeRoles('SECRETAIRE'), createOutgoingCourrier);
 router.get('/', protect, getAllCourriers);
+router.get('/:id/history', protect, getCourrierHistory);
 router.put('/:id', protect, authorizeRoles('SECRETAIRE'), updateCourrier);
 router.delete('/:id', protect, authorizeRoles('ADMIN'), softDeleteCourrier);
 
@@ -22,5 +24,6 @@ router.delete('/:id', protect, authorizeRoles('ADMIN'), softDeleteCourrier);
 //         message: 'Route courriers'
 //     });
 // });
+
 
 module.exports = router;
