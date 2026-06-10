@@ -1,4 +1,5 @@
 const Courrier = require('../models/Courrier');
+const Log = require('../models/Log');
 require('../models/User');
 const { generateCourrierReference } = require('../utils/reference');
 
@@ -185,10 +186,49 @@ const softDeleteCourrier = async (req, res) => {
     }
 };
 
+const getCourrierHistory = async (req, res) => {
+    try {
+        const courrier = await Courrier.findOne({
+            _id: req.params.id,
+            isDeleted: false
+        });
+
+        if (!courrier) {
+            return res.status(404).json({
+                message: 'Courrier not found'
+            });
+        }
+
+        const logs = await Log.find({
+            courrierId: courrier._id
+        })
+            .populate('userId', 'nom prenom email')
+            .populate('courrierId', 'reference objet statut type')
+            .sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            courrier: {
+                id: courrier._id,
+                reference: courrier.reference,
+                objet: courrier.objet,
+                statut: courrier.statut
+            },
+            count: logs.length,
+            history: logs
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Failed to get courrier history',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createIncomingCourrier,
     createOutgoingCourrier,
     getAllCourriers,
     updateCourrier,
-    softDeleteCourrier
+    softDeleteCourrier,
+    getCourrierHistory
 };
