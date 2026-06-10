@@ -66,9 +66,15 @@ const affectCourrierToService = async (req, res) => {
             message: `Courrier ${courrier.reference} has been assigned to your service`
         });
 
+        const populatedAffectation = await Affectation.findById(affectation._id)
+            .populate('courrierId')
+            .populate('fromUserId', 'nom prenom email')
+            .populate('toUserId', 'nom prenom email')
+            .populate('serviceId');
+
         return res.status(201).json({
             message: 'Courrier assigned successfully',
-            affectation,
+            affectation: populatedAffectation,
             notification
         });
 
