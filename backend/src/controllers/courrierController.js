@@ -149,9 +149,46 @@ const updateCourrier = async (req, res) => {
     }
 };
 
+const softDeleteCourrier = async (req, res) => {
+    try {
+        const courrier = await Courrier.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                isDeleted: false
+            },
+            {
+                isDeleted: true
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        )
+            .populate('createdBy', 'nom prenom email')
+            .populate('serviceId');
+
+        if (!courrier) {
+            return res.status(404).json({
+                message: 'Courrier not found'
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Courrier deleted successfully',
+            courrier
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Failed to delete courrier',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createIncomingCourrier,
     createOutgoingCourrier,
     getAllCourriers,
-    updateCourrier
+    updateCourrier,
+    softDeleteCourrier
 };
