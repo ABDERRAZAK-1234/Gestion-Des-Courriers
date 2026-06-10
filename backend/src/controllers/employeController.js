@@ -1,5 +1,6 @@
 const Affectation = require('../models/Affectation');
 const Courrier = require('../models/Courrier');
+const { createLog } = require('../services/logService');
 require('../models/Service');
 require('../models/User');
 
@@ -116,11 +117,20 @@ const traiterAffectation = async (req, res) => {
             .populate('toUserId', 'nom prenom email')
             .populate('serviceId');
 
+        await createLog({
+            userId: req.user._id,
+            courrierId: affectation.courrierId,
+            action: 'TRAITEMENT_COURRIER',
+            description: commentaireTraitement || 'Courrier traité par employé'
+        });
+        
         return res.status(200).json({
             message: 'Affectation treated successfully',
             affectation: treatedAffectation,
             courrier
         });
+
+
     } catch (error) {
         return res.status(500).json({
             message: 'Failed to treat affectation',
