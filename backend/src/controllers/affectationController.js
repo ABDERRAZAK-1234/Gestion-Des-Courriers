@@ -2,6 +2,7 @@ const Affectation = require('../models/Affectation');
 const Courrier = require('../models/Courrier');
 const Notification = require('../models/Notification');
 const Service = require('../models/Service');
+const { createLog } = require('../services/logService');
 require('../models/User');
 
 const affectCourrierToService = async (req, res) => {
@@ -53,6 +54,13 @@ const affectCourrierToService = async (req, res) => {
             toUserId: service.responsableId._id,
             serviceId: service._id,
             commentaire
+        });
+
+        await createLog({
+            userId: req.user._id,
+            courrierId: courrier._id,
+            action: 'AFFECTATION_SERVICE',
+            description: `Courrier ${courrier.reference} affecté au service ${service.nom}`
         });
 
         courrier.serviceId = service._id,
