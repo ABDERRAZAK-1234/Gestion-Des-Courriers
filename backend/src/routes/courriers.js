@@ -5,7 +5,8 @@ const {
     createIncomingCourrier,
     createOutgoingCourrier,
     getAllCourriers,
-    updateCourrier
+    updateCourrier,
+    softDeleteCourrier
 } = require('../controllers/courrierController');
 
 const router = express.Router();
@@ -14,6 +15,7 @@ router.post('/entrant', protect, authorizeRoles('SECRETAIRE'), createIncomingCou
 router.post('/sortant', protect, authorizeRoles('SECRETAIRE'), createOutgoingCourrier);
 router.get('/', protect, getAllCourriers);
 router.put('/:id', protect, authorizeRoles('SECRETAIRE'), updateCourrier);
+router.delete('/:id', protect, authorizeRoles('ADMIN'), softDeleteCourrier);
 
 // router.get('/', (req, res) => {
 //     res.json({
