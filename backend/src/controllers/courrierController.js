@@ -50,6 +50,7 @@ const createIncomingCourrier = async (req, res) => {
     return createCourrierByType(req, res, 'ENTRANT');
 };
 
+
 const createOutgoingCourrier = async (req, res) => {
     return createCourrierByType(req, res, 'SORTANT');
 };
