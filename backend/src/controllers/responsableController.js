@@ -3,6 +3,7 @@ const Courrier = require('../models/Courrier');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const { createLog } = require('../services/logService');
+const { assertCanChangeStatus } = require('../services/workflowService');
 require('../models/Service');
 require('../models/Role');
 
@@ -65,11 +66,14 @@ const acceptAffectation = async (req, res) => {
         affectation.dateReception = new Date();
         await affectation.save();
 
-        const courrier = await Courrier.findByIdAndUpdate(
-            affectation.courrierId,
-            { statut: 'RECU' },
-            { new: true, runValidators: true }
-        );
+        const courrierToUpdate = await Courrier.findById(affectation.courrierId);
+
+        assertCanChangeStatus(courrierToUpdate, 'RECU');
+
+        courrierToUpdate.statut = 'RECU';
+        await courrierToUpdate.save();
+
+        const courrier = courrierToUpdate;
 
         const acceptedAffectation = await Affectation.findById(affectation._id)
             .populate('courrierId')
@@ -97,6 +101,12 @@ const acceptAffectation = async (req, res) => {
         });
 
     } catch (error) {
+        if (error.message.startsWith('Invalid workflow transition')) {
+            return res.status(400).json({
+                message: error.message
+            });
+        }
+
         return res.status(500).json({
             message: 'Failed to accept affectation',
             error: error.message
@@ -176,11 +186,14 @@ const assignAffectationToEmployee = async (req, res) => {
             commentaire
         });
 
-        const courrier = await Courrier.findByIdAndUpdate(
-            affectation.courrierId._id,
-            { statut: 'EN_COURS' },
-            { new: true, runValidators: true }
-        );
+        const courrierToUpdate = await Courrier.findById(affectation.courrierId._id);
+
+        assertCanChangeStatus(courrierToUpdate, 'EN_COURS');
+
+        courrierToUpdate.statut = 'EN_COURS';
+        await courrierToUpdate.save();
+
+        const courrier = courrierToUpdate;
 
         const notification = await Notification.create({
             userId: employee._id,
@@ -201,7 +214,7 @@ const assignAffectationToEmployee = async (req, res) => {
             action: 'TRANSFERT_EMPLOYE',
             description: `Courrier transféré à ${employee.nom} ${employee.prenom}`
         });
-        
+
         return res.status(201).json({
             message: 'Courrier assigned to employee successfully',
             affectation: populatedAffectation,
@@ -211,6 +224,12 @@ const assignAffectationToEmployee = async (req, res) => {
 
 
     } catch (error) {
+        if (error.message.startsWith('Invalid workflow transition')) {
+            return res.status(400).json({
+                message: error.message
+            });
+        }
+
         return res.status(500).json({
             message: 'Failed to assign courrier to employee',
             error: error.message
