@@ -2,6 +2,7 @@ const Courrier = require('../models/Courrier');
 const Log = require('../models/Log');
 require('../models/User');
 const { generateCourrierReference } = require('../utils/reference');
+const { assertCanChangeStatus } = require('../services/workflowService');
 
 const createCourrierByType = async (req, res, type) => {
     try {
@@ -225,11 +226,48 @@ const getCourrierHistory = async (req, res) => {
     }
 };
 
+const archiveCourrier = async (req, res) => {
+    try {
+        const courrier = await Courrier.findOne({
+            _id: req.params.id,
+            isDeleted: false
+        });
+
+        if (!courrier) {
+            return res.status(404).json({
+                message: 'Courrier not found'
+            });
+        }
+
+        assertCanChangeStatus(courrier, 'ARCHIVE');
+
+        courrier.statut = 'ARCHIVE';
+        await courrier.save();
+
+        return res.status(200).json({
+            message: 'Courrier archived successfully',
+            courrier
+        });
+    } catch (error) {
+        if (error.message.startsWith('Invalid workflow transition')) {
+            return res.status(400).json({
+                message: 'Impossible d’archiver un courrier non traité'
+            });
+        }
+
+        return res.status(500).json({
+            message: 'Failed to archive courrier',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createIncomingCourrier,
     createOutgoingCourrier,
     getAllCourriers,
     updateCourrier,
     softDeleteCourrier,
-    getCourrierHistory
+    getCourrierHistory,
+    archiveCourrier
 };
