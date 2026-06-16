@@ -3,6 +3,8 @@ const Log = require('../models/Log');
 require('../models/User');
 const { generateCourrierReference } = require('../utils/reference');
 const { assertCanChangeStatus } = require('../services/workflowService');
+const Service = require('../models/Service');
+const { archiveCourrierFileByService } = require('../services/archiveService');
 
 const createCourrierByType = async (req, res, type) => {
     try {
@@ -237,7 +239,27 @@ const archiveCourrier = async (req, res) => {
             });
         }
 
+        if (!courrier.serviceId) {
+            return res.status(400).json({
+                message: 'Cannot archive courrier without assigned service'
+            });
+        }
+
+        const service = await Service.findById(courrier.serviceId);
+
+        if (!service) {
+            return res.status(404).json({
+                message: 'Service not found'
+            });
+        }
+
         assertCanChangeStatus(courrier, 'ARCHIVE');
+
+        const archivedPath = await archiveCourrierFileByService(courrier, service);
+
+        if (archivedPath) {
+            courrier.filePath = archivedPath;
+        }
 
         courrier.statut = 'ARCHIVE';
         await courrier.save();
