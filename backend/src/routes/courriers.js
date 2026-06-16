@@ -10,11 +10,12 @@ const {
     getCourrierHistory,
     archiveCourrier
 } = require('../controllers/courrierController');
+const { upload } = require('../middlewares/uploadMiddleware');
 
 const router = express.Router();
 
-router.post('/entrant', protect, authorizeRoles('SECRETAIRE'), createIncomingCourrier);
-router.post('/sortant', protect, authorizeRoles('SECRETAIRE'), createOutgoingCourrier);
+router.post('/entrant', protect, authorizeRoles('SECRETAIRE'), upload.single('file'), createIncomingCourrier);
+router.post('/sortant', protect, authorizeRoles('SECRETAIRE'), upload.single('file'), createOutgoingCourrier);
 router.get('/', protect, getAllCourriers);
 router.get('/:id/history', protect, getCourrierHistory);
 router.put('/:id', protect, authorizeRoles('SECRETAIRE'), updateCourrier);
