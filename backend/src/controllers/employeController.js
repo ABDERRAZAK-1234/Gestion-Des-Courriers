@@ -1,6 +1,7 @@
 const Affectation = require('../models/Affectation');
 const Courrier = require('../models/Courrier');
 const { createLog } = require('../services/logService');
+const { assertCanChangeStatus } = require('../services/workflowService');
 require('../models/Service');
 require('../models/User');
 
@@ -105,11 +106,14 @@ const traiterAffectation = async (req, res) => {
         affectation.dateTraitement = new Date();
         await affectation.save();
 
-        const courrier = await Courrier.findByIdAndUpdate(
-            affectation.courrierId,
-            { statut: 'TRAITE' },
-            { new: true, runValidators: true }
-        );
+        const courrierToUpdate = await Courrier.findById(affectation.courrierId);
+
+        assertCanChangeStatus(courrierToUpdate, 'TRAITE');
+
+        courrierToUpdate.statut = 'TRAITE';
+        await courrierToUpdate.save();
+
+        const courrier = courrierToUpdate;
 
         const treatedAffectation = await Affectation.findById(affectation._id)
             .populate('courrierId')
@@ -123,7 +127,7 @@ const traiterAffectation = async (req, res) => {
             action: 'TRAITEMENT_COURRIER',
             description: commentaireTraitement || 'Courrier traité par employé'
         });
-        
+
         return res.status(200).json({
             message: 'Affectation treated successfully',
             affectation: treatedAffectation,
@@ -132,6 +136,12 @@ const traiterAffectation = async (req, res) => {
 
 
     } catch (error) {
+        if (error.message.startsWith('Invalid workflow transition')) {
+            return res.status(400).json({
+                message: error.message
+            });
+        }
+
         return res.status(500).json({
             message: 'Failed to treat affectation',
             error: error.message
