@@ -3,6 +3,7 @@ const Courrier = require('../models/Courrier');
 const Notification = require('../models/Notification');
 const Service = require('../models/Service');
 const { createLog } = require('../services/logService');
+const { assertCanChangeStatus } = require('../services/workflowService');
 require('../models/User');
 
 const affectCourrierToService = async (req, res) => {
@@ -63,6 +64,8 @@ const affectCourrierToService = async (req, res) => {
             description: `Courrier ${courrier.reference} affecté au service ${service.nom}`
         });
 
+        assertCanChangeStatus(courrier, 'TRANSMIS');
+
         courrier.serviceId = service._id,
             courrier.statut = 'TRANSMIS';
         await courrier.save();
@@ -87,6 +90,12 @@ const affectCourrierToService = async (req, res) => {
         });
 
     } catch (error) {
+        if (error.message.startsWith('Invalid workflow transition')) {
+            return res.status(400).json({
+                message: error.message
+            });
+        }
+
         return res.status(500).json({
             message: 'Failed to assign courrier',
             error: error.message
