@@ -1,8 +1,8 @@
 const allowedTransitions = {
-    NOUVEAU: ['TRANSMIS', 'ARCHIVE'],
-    TRANSMIS: ['RECU', 'ARCHIVE'],
-    RECU: ['EN_COURS', 'ARCHIVE'],
-    EN_COURS: ['TRAITE', 'ARCHIVE'],
+    NOUVEAU: ['TRANSMIS'],
+    TRANSMIS: ['RECU'],
+    RECU: ['EN_COURS'],
+    EN_COURS: ['TRAITE'],
     TRAITE: ['ARCHIVE'],
     ARCHIVE: []
 };
