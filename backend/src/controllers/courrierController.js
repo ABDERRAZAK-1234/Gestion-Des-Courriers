@@ -8,14 +8,12 @@ const createCourrierByType = async (req, res, type) => {
     try {
         const {
             objet,
-            description,
-            nameFile,
-            filePath
+            description
         } = req.body;
 
-        if (!objet || !nameFile) {
+        if (!objet || !req.file) {
             return res.status(400).json({
-                message: 'Reference, objet and nameFile are required'
+                message: 'Objet and file are required'
             });
         }
 
@@ -26,8 +24,8 @@ const createCourrierByType = async (req, res, type) => {
             type,
             objet,
             description,
-            nameFile,
-            filePath,
+            nameFile: req.file.originalname,
+            filePath: req.file.path,
             createdBy: req.user._id
         });
 
