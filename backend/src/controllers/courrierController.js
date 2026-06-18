@@ -6,6 +6,22 @@ const { assertCanChangeStatus } = require('../services/workflowService');
 const Service = require('../models/Service');
 const { archiveCourrierFileByService } = require('../services/archiveService');
 
+const fs = require('fs');
+const path = require('path');
+
+const resolveCourrierFile = (filePath) => {
+    const uploadsRoot = path.resolve(__dirname, '../../uploads');
+    const absolutePath = path.resolve(filePath);
+
+    const relativePath = path.relative(uploadsRoot, absolutePath);
+
+    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+        return null;
+    }
+
+    return absolutePath;
+};
+
 const createCourrierByType = async (req, res, type) => {
     try {
         const {
@@ -335,6 +351,67 @@ const assignCourrierToService = async (req, res) => {
     }
 };
 
+const viewCourrierFile = async (req, res) => {
+    try {
+        const courrier = await Courrier.findOne({
+            _id: req.params.id,
+            isDeleted: false
+        });
+
+        if (!courrier || !courrier.filePath) {
+            return res.status(404).json({
+                message: 'Courrier file not found'
+            });
+        }
+
+        const filePath = resolveCourrierFile(courrier.filePath);
+
+        if (!filePath || !fs.existsSync(filePath)) {
+            return res.status(404).json({
+                message: 'File not found on server'
+            });
+        }
+
+        return res.sendFile(filePath);
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Failed to view courrier file',
+            error: error.message
+        });
+    }
+};
+
+const downloadCourrierFile = async (req, res) => {
+    try {
+        const courrier = await Courrier.findOne({
+            _id: req.params.id,
+            isDeleted: false
+        });
+
+        if (!courrier || !courrier.filePath) {
+            return res.status(404).json({
+                message: 'Courrier file not found'
+            });
+        }
+
+        const filePath = resolveCourrierFile(courrier.filePath);
+
+        if (!filePath || !fs.existsSync(filePath)) {
+            return res.status(404).json({
+                message: 'File not found on server'
+            });
+        }
+
+        return res.download(filePath, courrier.nameFile);
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Failed to download courrier file',
+            error: error.message
+        });
+    }
+};
+
+
 module.exports = {
     createIncomingCourrier,
     createOutgoingCourrier,
@@ -343,5 +420,7 @@ module.exports = {
     softDeleteCourrier,
     getCourrierHistory,
     archiveCourrier,
-    assignCourrierToService
+    assignCourrierToService,
+    viewCourrierFile,
+    downloadCourrierFile
 };
