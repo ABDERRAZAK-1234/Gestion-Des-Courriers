@@ -282,6 +282,59 @@ const archiveCourrier = async (req, res) => {
     }
 };
 
+const assignCourrierToService = async (req, res) => {
+    try {
+        const { courrierId } = req.params;
+        const { serviceId } = req.body;
+
+        if (!serviceId) {
+            return res.status(400).json({
+                message: 'ServiceId is required'
+            });
+        }
+
+        const service = await Service.findById(serviceId);
+
+        if (!service) {
+            return res.status(404).json({
+                message: 'Service not found'
+            });
+        }
+
+        const courrier = await Courrier.findOneAndUpdate(
+            {
+                _id: courrierId,
+                isDeleted: false
+            },
+            {
+                serviceId: service._id
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        )
+            .populate('serviceId')
+            .populate('createdBy', 'nom prenom email');
+
+        if (!courrier) {
+            return res.status(404).json({
+                message: 'Courrier not found'
+            });
+        }
+
+        return res.status(200).json({
+            message: 'Courrier associated to service successfully',
+            courrier
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Failed to associate courrier to service',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createIncomingCourrier,
     createOutgoingCourrier,
@@ -289,5 +342,6 @@ module.exports = {
     updateCourrier,
     softDeleteCourrier,
     getCourrierHistory,
-    archiveCourrier
+    archiveCourrier,
+    assignCourrierToService
 };
