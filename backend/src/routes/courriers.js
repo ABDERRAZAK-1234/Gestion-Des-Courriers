@@ -8,7 +8,9 @@ const {
     updateCourrier,
     softDeleteCourrier,
     getCourrierHistory,
-    archiveCourrier
+    archiveCourrier,
+    viewCourrierFile,
+    downloadCourrierFile
 } = require('../controllers/courrierController');
 const { upload } = require('../middlewares/uploadMiddleware');
 
@@ -21,6 +23,9 @@ router.get('/:id/history', protect, getCourrierHistory);
 router.put('/:id', protect, authorizeRoles('SECRETAIRE'), updateCourrier);
 router.delete('/:id', protect, authorizeRoles('ADMIN'), softDeleteCourrier);
 router.patch('/:id/archive', protect, authorizeRoles('ADMIN'), archiveCourrier);
+
+router.get('/:id/file', protect, viewCourrierFile);
+router.get('/:id/download', protect, downloadCourrierFile);
 
 // router.get('/', (req, res) => {
 //     res.json({
