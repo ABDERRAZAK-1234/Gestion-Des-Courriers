@@ -6,6 +6,8 @@ const { assertCanChangeStatus } = require('../services/workflowService');
 const Service = require('../models/Service');
 const { archiveCourrierFileByService } = require('../services/archiveService');
 
+const { buildFileMetadata } = require('../services/fileService');
+
 const fs = require('fs');
 const path = require('path');
 
@@ -37,13 +39,15 @@ const createCourrierByType = async (req, res, type) => {
 
         const reference = await generateCourrierReference(type);
 
+        const fileMetadata = await buildFileMetadata(req.file);
+
         const courrier = await Courrier.create({
             reference,
             type,
             objet,
             description,
             nameFile: req.file.originalname,
-            filePath: req.file.path,
+            filePath: req.file.path,fileMetadata,
             createdBy: req.user._id
         });
 
