@@ -1,5 +1,21 @@
 const mongoose = require('mongoose');
 
+const fileMetadataSchema = new mongoose.Schema(
+    {
+        originalName: String,
+        storedName: String,
+        mimeType: String,
+        extension: String,
+        size: Number,
+        checksum: String,
+        uploadedAt: {
+            type: Date,
+            default: Date.now
+        }
+    },
+    { _id: false }
+);
+
 const courrierSchema = new mongoose.Schema(
     {
         reference: {
@@ -40,6 +56,10 @@ const courrierSchema = new mongoose.Schema(
         serviceId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Service',
+            default: null
+        },
+        fileMetadata: {
+            type: fileMetadataSchema,
             default: null
         },
 
