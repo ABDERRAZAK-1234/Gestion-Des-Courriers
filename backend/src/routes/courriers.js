@@ -10,7 +10,8 @@ const {
     getCourrierHistory,
     archiveCourrier,
     viewCourrierFile,
-    downloadCourrierFile
+    downloadCourrierFile,
+    getCourrierByReference
 } = require('../controllers/courrierController');
 const { upload } = require('../middlewares/uploadMiddleware');
 
@@ -26,6 +27,12 @@ router.patch('/:id/archive', protect, authorizeRoles('ADMIN'), archiveCourrier);
 
 router.get('/:id/file', protect, viewCourrierFile);
 router.get('/:id/download', protect, downloadCourrierFile);
+
+router.get(
+    '/reference/:reference',
+    protect,
+    getCourrierByReference
+);
 
 // router.get('/', (req, res) => {
 //     res.json({
