@@ -47,7 +47,7 @@ const createCourrierByType = async (req, res, type) => {
             objet,
             description,
             nameFile: req.file.originalname,
-            filePath: req.file.path,fileMetadata,
+            filePath: req.file.path, fileMetadata,
             createdBy: req.user._id
         });
 
@@ -415,6 +415,34 @@ const downloadCourrierFile = async (req, res) => {
     }
 };
 
+const getCourrierByReference = async (req, res) => {
+    try {
+        const reference = req.params.reference.trim().toUpperCase();
+
+        const courrier = await Courrier.findOne({
+            reference,
+            isDeleted: false
+        })
+            .populate('createdBy', 'nom prenom email')
+            .populate('serviceId');
+
+        if (!courrier) {
+            return res.status(404).json({
+                message: 'Courrier not found'
+            });
+        }
+
+        return res.status(200).json({
+            courrier
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Failed to search courrier',
+            error: error.message
+        });
+    }
+};
+
 
 module.exports = {
     createIncomingCourrier,
@@ -426,5 +454,6 @@ module.exports = {
     archiveCourrier,
     assignCourrierToService,
     viewCourrierFile,
-    downloadCourrierFile
+    downloadCourrierFile,
+    getCourrierByReference
 };
