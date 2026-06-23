@@ -78,40 +78,46 @@ const createOutgoingCourrier = async (req, res) => {
 
 const getAllCourriers = async (req, res) => {
     try {
-        const { type, statut, search } = req.query;
+        const { statut } = req.query;
+
+        const allowedStatuts = [
+            'NOUVEAU',
+            'TRANSMIS',
+            'RECU',
+            'EN_COURS',
+            'TRAITE',
+            'ARCHIVE'
+        ];
 
         const filter = {
             isDeleted: false
         };
 
-        if (type) {
-            filter.type = type;
-        }
-
         if (statut) {
-            filter.statut = statut;
-        }
+            const statutUpper = statut.toUpperCase();
 
-        if (search) {
-            filter.$or = [
-                { reference: { $regex: search, $options: 'i' } },
-                { objet: { $regex: search, $options: 'i' } },
-                { description: { $regex: search, $options: 'i' } }
-            ];
+            if (!allowedStatuts.includes(statutUpper)) {
+                return res.status(400).json({
+                    message: 'Statut invalide',
+                    allowedStatuts
+                });
+            }
+
+            filter.statut = statutUpper;
         }
 
         const courriers = await Courrier.find(filter)
             .populate('createdBy', 'nom prenom email')
-            .populate('serviceId')
+            .populate('serviceId', 'nom description')
             .sort({ createdAt: -1 });
 
-        return res.status(200).json({
+        res.status(200).json({
             count: courriers.length,
             courriers
         });
     } catch (error) {
-        return res.status(500).json({
-            message: 'Failed to get courriers',
+        res.status(500).json({
+            message: 'Erreur lors de la récupération des courriers',
             error: error.message
         });
     }
