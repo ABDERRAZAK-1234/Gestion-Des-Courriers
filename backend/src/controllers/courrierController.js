@@ -78,8 +78,7 @@ const createOutgoingCourrier = async (req, res) => {
 
 const getAllCourriers = async (req, res) => {
     try {
-        const { statut, serviceId } = req.query;
-
+        const { statut, serviceId, page = 1, limit = 10 } = req.query;
 
         const allowedStatuts = [
             'NOUVEAU',
@@ -106,17 +105,30 @@ const getAllCourriers = async (req, res) => {
 
             filter.statut = statutUpper;
         }
+
         if (serviceId) {
             filter.serviceId = serviceId;
         }
 
+        const pageNumber = Math.max(parseInt(page, 10), 1);
+        const limitNumber = Math.max(parseInt(limit, 10), 1);
+        const skip = (pageNumber - 1) * limitNumber;
+
+        const total = await Courrier.countDocuments(filter);
+
         const courriers = await Courrier.find(filter)
             .populate('createdBy', 'nom prenom email')
             .populate('serviceId', 'nom description')
-            .sort({ createdAt: -1 });
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limitNumber);
 
         res.status(200).json({
             count: courriers.length,
+            total,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(total / limitNumber),
             courriers
         });
     } catch (error) {
