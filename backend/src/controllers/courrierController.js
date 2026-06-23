@@ -78,7 +78,8 @@ const createOutgoingCourrier = async (req, res) => {
 
 const getAllCourriers = async (req, res) => {
     try {
-        const { statut } = req.query;
+        const { statut, serviceId } = req.query;
+
 
         const allowedStatuts = [
             'NOUVEAU',
@@ -104,6 +105,9 @@ const getAllCourriers = async (req, res) => {
             }
 
             filter.statut = statutUpper;
+        }
+        if (serviceId) {
+            filter.serviceId = serviceId;
         }
 
         const courriers = await Courrier.find(filter)
