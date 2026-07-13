@@ -53,6 +53,7 @@ export const useAuthStore = defineStore('auth', {
     logout() {
       this.user = null;
       this.token = null;
+      this.error = null;
       localStorage.removeItem('token');
     }
   }
